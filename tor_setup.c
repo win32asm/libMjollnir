@@ -3,12 +3,12 @@
 //
 
 #include "libmjollnir_int.h"
-#include <errno.h> // for error constants
+#include <gnutls/gnutls.h> // for error constants
 
 int tor_setup(ptor_config _cfg, ptor_context *ctxt){
 
 
-    return ESUCCESS;
+    return GNUTLS_E_SUCCESS;
 }
 
 void tor_teardown(ptor_context ctxt){
