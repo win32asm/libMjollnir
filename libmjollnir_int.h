@@ -8,12 +8,13 @@
  * stuff, hidden from a man`s eye
  * */
 #include "libmjollnir.h"
+#include <gnutls/gnutls.h>
 
-// define for no error
-#define ESUCCESS (0)
+// use GNUTLS_E_* codes for errors - for now
 
 struct _tor_context {
 
+    gnutls_pubkey_t pubkey;
 };
 
 struct _tor_socket {
