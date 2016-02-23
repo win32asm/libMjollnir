@@ -14,7 +14,8 @@
 
 struct _tor_context {
 
-    gnutls_pubkey_t pubkey;
+    gnutls_privkey_t privkey;
+    gnutls_pubkey_t  pubkey;
 };
 
 struct _tor_socket {
