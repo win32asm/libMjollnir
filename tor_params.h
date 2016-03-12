@@ -9,6 +9,7 @@
 
 typedef unsigned char byte, *pbyte;
 
+#define RSA_KEYLEN (1024)
 #define KEY_LEN (16)      // the length of the stream cipher's key, in bytes.
 #define PK_ENC_LEN (128)  // the length of a public-key encrypted message, in bytes.
 #define PK_PAD_LEN (42)   // the number of bytes added in padding for public-key

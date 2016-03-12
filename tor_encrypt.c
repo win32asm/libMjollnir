@@ -13,6 +13,7 @@
 #include <gnutls/crypto.h>
 #include <nettle/aes.h>
 #include <nettle/ctr.h>
+#include <gnutls/gnutls.h>
 
 /**
    The "hybrid encryption" of a byte sequence M with a public key PK is
@@ -29,6 +30,7 @@ int tor_hybrid_encrypt(gnutls_pubkey_t pubkey_in, const byte *blob_in, size_t bl
     assert(blob_in  != NULL);
     assert(blob_out != NULL);
     assert(blob_out_sz != NULL);
+    assert(pubkey_in != NULL);
 
     if (blob_in_sz < (PK_ENC_LEN-PK_PAD_LEN)) {
         byte * outbuf = (byte*)malloc(PK_ENC_LEN);
@@ -39,13 +41,16 @@ int tor_hybrid_encrypt(gnutls_pubkey_t pubkey_in, const byte *blob_in, size_t bl
 
         {   // do pubkey encrypt
             gnutls_datum_t inp = {.data = (unsigned char *) blob_in, .size = (unsigned int) blob_in_sz};
-            gnutls_datum_t out = {.data = outbuf, .size = PK_ENC_LEN};
+            gnutls_datum_t out;
 
             rslt = gnutls_pubkey_encrypt_data(pubkey_in, 0, &inp, &out);
             if (rslt != GNUTLS_E_SUCCESS) {
                 free(outbuf);  // VB: encrypt failed, don`t need to clean?
                 return rslt;
             }
+            assert(out.size == PK_ENC_LEN);
+            memcpy(outbuf, out.data, PK_ENC_LEN);
+            gnutls_free(out.data);
             *blob_out_sz = PK_ENC_LEN;
             *blob_out = outbuf;
         }
@@ -74,7 +79,7 @@ int tor_hybrid_encrypt(gnutls_pubkey_t pubkey_in, const byte *blob_in, size_t bl
         memcpy(inbuf+KEY_LEN,blob_in, PK_ENC_LEN-PK_PAD_LEN-KEY_LEN);
         {   // do pubkey encrypt
             gnutls_datum_t inp = {.data = inbuf, .size = PK_ENC_LEN-PK_PAD_LEN};
-            gnutls_datum_t out = {.data = outbuf, .size = PK_ENC_LEN};
+            gnutls_datum_t out;
 
             rslt = gnutls_pubkey_encrypt_data(pubkey_in, 0, &inp, &out);
             if (rslt != GNUTLS_E_SUCCESS) {
@@ -83,6 +88,9 @@ int tor_hybrid_encrypt(gnutls_pubkey_t pubkey_in, const byte *blob_in, size_t bl
                 free(outbuf);  // VB: encrypt failed, don`t need to clean?
                 return rslt;
             }
+            assert(out.size == PK_ENC_LEN);
+            memcpy(outbuf, out.data, PK_ENC_LEN);
+            gnutls_free(out.data);
             *blob_out_sz = PK_ENC_LEN;
             *blob_out = outbuf;
         }
@@ -97,6 +105,7 @@ int tor_hybrid_decrypt(ptor_context ctx, const byte *blob_in, size_t blob_in_sz,
     assert(blob_out != NULL);
     assert(blob_out_sz != NULL);
     assert(blob_in_sz >= PK_ENC_LEN);
+    assert(ctx != NULL);
 
     byte * outbuf = (byte*)malloc(blob_in_sz);
 
@@ -106,13 +115,15 @@ int tor_hybrid_decrypt(ptor_context ctx, const byte *blob_in, size_t blob_in_sz,
 
     {   // do privkey decrypt
         gnutls_datum_t inp = {.data = (unsigned char *) blob_in, .size = PK_ENC_LEN };
-        gnutls_datum_t out = {.data = outbuf, .size = PK_ENC_LEN};
+        gnutls_datum_t out;
 
         rslt = gnutls_privkey_decrypt_data(ctx->privkey, 0, &inp, &out);
         if (rslt != GNUTLS_E_SUCCESS) {
             free(outbuf);  // VB: encrypt failed, don`t need to clean?
             return rslt;
         }
+        memcpy(outbuf, out.data, PK_ENC_LEN);
+        gnutls_free(out.data);
     }
 
     if (blob_in_sz > (PK_ENC_LEN-PK_PAD_LEN)) {   // do AES decrypt

@@ -13,6 +13,7 @@
 // use GNUTLS_E_* codes for errors - for now
 
 struct _tor_context {
+    gnutls_privkey_t masterkey;
 
     gnutls_privkey_t privkey;
     gnutls_pubkey_t  pubkey;
